@@ -9,6 +9,27 @@ from pathlib import Path
 
 import requests
 
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+SESSION = requests.Session()
+SESSION.headers.update({
+    "User-Agent": "Mozilla/5.0 (compatible; MarketMonitor/1.0)"
+})
+
+retry = Retry(
+    total=3,
+    connect=3,
+    read=3,
+    backoff_factor=1,
+    status_forcelist=[429, 500, 502, 503, 504],
+    allowed_methods=["GET"],
+)
+
+adapter = HTTPAdapter(max_retries=retry)
+SESSION.mount("https://", adapter)
+SESSION.mount("http://", adapter)
+
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data.json"
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; MarketWatch/1.0)"}
@@ -68,8 +89,9 @@ def get_credit_ratio():
     from bs4 import BeautifulSoup
 
     url = "https://nikkei225jp.com/data/sinyou.php"
-    response = SESSION.get(url, timeout=30)
+    response = SESSION.get(url, timeout=(10, 60))
     response.raise_for_status()
+    
 
     soup = BeautifulSoup(response.text, "html.parser")
 
