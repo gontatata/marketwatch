@@ -64,34 +64,53 @@ def get_yahoo(symbol):
 
 
 def get_credit_ratio():
-    """日経225.jpのページから信用評価損益率らしき数値を抽出する。
-    HTMLの構造が変わった場合は取得できないため、誤った数値を出さず空欄にする。
-    """
-    url = "https://nikkei225jp.com/data/sinyou.php"
-    r = requests.get(url, headers=HEADERS, timeout=30)
-    r.raise_for_status()
-    html = unescape(r.text)
-    text = re.sub(r"<script\b.*?</script>|<style\b.*?</style>",
-                  " ", html, flags=re.I | re.S)
-    text = re.sub(r"<[^>]+>", " ", text)
-    text = re.sub(r"\s+", " ", text)
+    """日経225.jpの信用評価損益率をテーブルから取得する。"""
+    from bs4 import BeautifulSoup
 
-    # ラベル近辺にある「-10.23%」などの値を探す
-    patterns = [
-        r"信用評価損益率.{0,100}?(-?\d+(?:\.\d+)?)\s*％?",
-        r"評価損益率.{0,100}?(-?\d+(?:\.\d+)?)\s*％?",
+    url = "https://nikkei225jp.com/data/sinyou.php"
+    response = SESSION.get(url, timeout=30)
+    response.raise_for_status()
+
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    # 信用残データのテーブルを特定
+    tbody = soup.select_one("tbody#datatbl")
+    if tbody is None:
+        raise ValueError("信用データのテーブル tbody#datatbl が見つかりません")
+
+    # ヘッダー以外の先頭行（最新データ）
+    rows = tbody.select("tr")
+    data_rows = [
+        row for row in rows
+        if row.select_one("time") is not None
     ]
-    for pattern in patterns:
-        match = re.search(pattern, text)
-        if match:
-            value = float(match.group(1))
-            # 通常この指標はパーセントで表記される
-            return {
-                "value": value,
-                "previous": None,
-                "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-            }
-    return {"value": None, "previous": None, "date": None}
+
+    if not data_rows:
+        raise ValueError("信用評価損益率のデータ行がありません")
+
+    def parse_row(row):
+        cells = row.find_all("td", recursive=False)
+
+        # 日付 + 8項目。9列目が信用評価損益率
+        if len(cells) < 9:
+            raise ValueError("信用データの列数が不足しています")
+
+        date = cells[0].get_text(strip=True)
+        raw_value = cells[8].get_text(strip=True)
+        raw_value = raw_value.replace("%", "").replace("％", "")
+
+        value = float(raw_value)
+
+        return {"date": date, "value": value}
+
+    latest = parse_row(data_rows[0])
+    previous = parse_row(data_rows[1]) if len(data_rows) > 1 else None
+
+    return {
+        "value": latest["value"],
+        "previous": previous["value"] if previous else None,
+        "date": latest["date"],
+    }
 
 
 def safe_fetch(name, func):
