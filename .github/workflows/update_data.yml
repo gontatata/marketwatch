@@ -1,10 +1,12 @@
 name: Update Market Data
 
 on:
-  schedule:
-    # 毎日 UTC 21:00（日本時間 6:00）に実行
-    - cron: "0 21 * * 1-5"
+  # GitHub上のボタンから手動実行
   workflow_dispatch:
+
+  # 平日の日本時間6時に自動実行
+  schedule:
+    - cron: "0 21 * * 1-5"
 
 permissions:
   contents: write
@@ -25,10 +27,28 @@ jobs:
       - name: Install dependencies
         run: pip install requests beautifulsoup4
 
+      - name: Show current data.json
+        run: |
+          if [ -f data.json ]; then
+            cat data.json
+          else
+            echo "data.json does not exist"
+          fi
+
       - name: Update market data
-        run: python scripts/update_data.py
+        run: python -u scripts/update_data.py
+
+      - name: Show updated data.json
+        if: always()
+        run: |
+          if [ -f data.json ]; then
+            cat data.json
+          else
+            echo "data.json does not exist"
+          fi
 
       - name: Commit and push changes
+        if: success()
         run: |
           if git diff --quiet -- data.json; then
             echo "No changes to data.json"
