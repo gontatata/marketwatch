@@ -1,75 +1,174 @@
-
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>投資環境モニター</title>
-<style>
-body{margin:0;background:#0b1120;color:#e5edf8;font:15px system-ui,sans-serif}
-main{max-width:900px;margin:auto;padding:24px 16px}
-h1{font-size:26px}#updated{color:#9caec5;font-size:13px;margin-bottom:20px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
-.card{background:#151f31;border:1px solid #2a3a52;border-radius:12px;padding:18px}
-.name{font-size:14px;color:#a9bad1}.value{font-size:32px;font-weight:700;margin:12px 0}
-.meta{font-size:12px;color:#9caec5;line-height:1.8}
-a{color:#83b7ff}.status{color:#a9bad1;margin:18px 0}
-</style>
-</head>
-<body>
-<main>
-<h1>投資環境モニター</h1>
-<div id="updated">データを読み込み中...</div>
-<div id="status" class="status"></div>
-<div id="cards" class="grid"></div>
-<p style="color:#9caec5;font-size:12px;margin-top:24px">
-データは外部提供元から定期取得します。休場日・配信遅延により最新取引日の値と異なる場合があります。
-</p>
-</main>
-<script>
-const items=[
- {key:"credit",name:"日本の信用評価損益率",unit:"%",source:"https://nikkei225jp.com/data/sinyou.php"},
- {key:"dgs10",name:"米国10年国債利回り",unit:"%",source:"https://fred.stlouisfed.org/series/DGS10"},
- {key:"fedfunds",name:"米国実効FF金利",unit:"%",source:"https://fred.stlouisfed.org/series/FEDFUNDS"},
- {key:"vix",name:"VIX指数",unit:"",source:"https://www.cboe.com/tradable-products/vix"},
- {key:"tqqq",name:"TQQQ",unit:" USD",source:"https://finance.yahoo.com/quote/TQQQ/"}
-];
-async function load(){
- const cards=document.getElementById("cards");
- try{
-  const res=await fetch("./data.json?t="+Date.now());
-  if(!res.ok)throw new Error("データファイルがありません");
-  const data=await res.json();
-  document.getElementById("updated").textContent=
-   "最終取得："+(data.updated_at||"不明");
-  cards.innerHTML=items.map(item=>{
-   const d=data[item.key]||{};
-   const valid=d.value!==null&&d.value!==undefined&&d.value!=="";
-   const val=valid?Number(d.value).toLocaleString("ja-JP",
-    {maximumFractionDigits:4})+item.unit:"取得できません";
-   const prev=d.previous!==null&&d.previous!==undefined&&d.previous!==""
-    ?Number(d.previous).toLocaleString("ja-JP",
-     {maximumFractionDigits:4})+item.unit:"—";
-   return `<section class="card">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>投資環境モニター</title>
+    <style>
+      body {
+        margin: 0;
+        background: #0b1120;
+        color: #e5edf8;
+        font: 15px system-ui, sans-serif;
+      }
+      main {
+        max-width: 900px;
+        margin: auto;
+        padding: 24px 16px;
+      }
+      h1 {
+        font-size: 26px;
+      }
+      #updated {
+        color: #9caec5;
+        font-size: 13px;
+        margin-bottom: 20px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 14px;
+      }
+      .card {
+        background: #151f31;
+        border: 1px solid #2a3a52;
+        border-radius: 12px;
+        padding: 18px;
+      }
+      .name {
+        font-size: 14px;
+        color: #a9bad1;
+      }
+      .value {
+        font-size: 32px;
+        font-weight: 700;
+        margin: 12px 0;
+      }
+      .meta {
+        font-size: 12px;
+        color: #9caec5;
+        line-height: 1.8;
+      }
+      a {
+        color: #83b7ff;
+      }
+      .status {
+        color: #a9bad1;
+        margin: 18px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>投資環境モニター</h1>
+      <div id="updated">データを読み込み中...</div>
+      <div id="status" class="status"></div>
+      <div id="cards" class="grid"></div>
+      <p style="color: #9caec5; font-size: 12px; margin-top: 24px">
+        データは外部提供元から定期取得します。休場日・配信遅延により最新取引日の値と異なる場合があります。
+      </p>
+    </main>
+    <script>
+      const items = [
+        {
+          key: "credit",
+          name: "日本の信用評価損益率",
+          unit: "%",
+          source: "https://nikkei225jp.com/data/sinyou.php",
+        },
+        {
+          key: "dgs10",
+          name: "米国10年国債利回り",
+          unit: "%",
+          source: "https://finance.yahoo.com/quote/%5ETNX/",
+        },
+        {
+          key: "fedfunds",
+          name: "米国実効FF金利",
+          unit: "%",
+          source: "https://www.newyorkfed.org/markets/reference-rates/effr",
+        },
+        {
+          key: "vix",
+          name: "VIX指数",
+          unit: "",
+          source: "https://www.cboe.com/tradable-products/vix",
+        },
+        {
+          key: "tqqq",
+          name: "TQQQ",
+          unit: " USD",
+          source: "https://finance.yahoo.com/quote/TQQQ/",
+        },
+      ];
+
+      function toJst(s) {
+        const m = /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}) UTC$/.exec(s || "");
+        if (!m) return s || "不明";
+        const d = new Date(m[1] + "T" + m[2] + ":00Z");
+        if (isNaN(d)) return s;
+        return (
+          d.toLocaleString("ja-JP", {
+            timeZone: "Asia/Tokyo",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+          }) + " JST"
+        );
+      }
+
+      async function load() {
+        const cards = document.getElementById("cards");
+        try {
+          const res = await fetch("./data.json?t=" + Date.now());
+          if (!res.ok) throw new Error("データファイルがありません");
+          const data = await res.json();
+          document.getElementById("updated").textContent =
+            "最終取得：" + toJst(data.updated_at);
+          cards.innerHTML = items
+            .map((item) => {
+              const d = data[item.key] || {};
+              const valid =
+                d.value !== null && d.value !== undefined && d.value !== "";
+              const val = valid
+                ? Number(d.value).toLocaleString("ja-JP", {
+                    maximumFractionDigits: 4,
+                  }) + item.unit
+                : "取得できません";
+              const prev =
+                d.previous !== null &&
+                d.previous !== undefined &&
+                d.previous !== ""
+                  ? Number(d.previous).toLocaleString("ja-JP", {
+                      maximumFractionDigits: 4,
+                    }) + item.unit
+                  : "—";
+              return `<section class="card">
     <div class="name">${item.name}</div>
     <div class="value">${val}</div>
     <div class="meta">
-     データ日：${d.date||"不明"}<br>
+     データ日：${d.date || "不明"}<br>
      前回値：${prev}<br>
      <a href="${item.source}" target="_blank" rel="noopener">データ提供元 ↗</a>
     </div></section>`;
-  }).join("");
-  const failed=items.filter(i=>!data[i.key]||data[i.key].value==null);
-  document.getElementById("status").textContent=failed.length
-   ?"未取得の項目："+failed.map(i=>i.name).join("、")
-   :"全項目のデータを読み込みました";
- }catch(e){
-  document.getElementById("updated").textContent="データ未取得";
-  document.getElementById("status").textContent=
-   "data.jsonがありません。GitHub Actionsを手動実行してください。";
- }
-}
-load();
-</script>
-</body>
+            })
+            .join("");
+          const failed = items.filter(
+            (i) => !data[i.key] || data[i.key].value == null
+          );
+          document.getElementById("status").textContent = failed.length
+            ? "未取得の項目：" + failed.map((i) => i.name).join("、")
+            : "全項目のデータを読み込みました";
+        } catch (e) {
+          document.getElementById("updated").textContent = "データ未取得";
+          document.getElementById("status").textContent =
+            "data.jsonがありません。GitHub Actionsを手動実行してください。";
+        }
+      }
+      load();
+    </script>
+  </body>
 </html>
