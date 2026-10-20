@@ -36,10 +36,10 @@ HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; MarketWatch/1.0)"}
 
 
 def get_fred(series_id):
-    url = "https://fred.stlouisfed.org/graph/fredgraph.csv"
-    r = requests.get(url, params={"id": series_id}, headers=HEADERS, timeout=30)
-    r.raise_for_status()
-    rows = list(csv.DictReader(StringIO(r.text)))
+    url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
+    response = SESSION.get(url, timeout=(15, 90))
+    response.raise_for_status() 
+    rows = list(csv.DictReader(StringIO(response.text)))
     valid = []
     for row in rows:
         date = row.get("observation_date") or row.get("DATE")
