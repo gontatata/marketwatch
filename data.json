@@ -1,0 +1,28 @@
+{
+  "updated_at": "2026-10-20 11:35 UTC",
+  "credit": {
+    "value": 225.0,
+    "previous": null,
+    "date": "2026-10-20"
+  },
+  "dgs10": {
+    "value": null,
+    "previous": null,
+    "date": null
+  },
+  "fedfunds": {
+    "value": null,
+    "previous": null,
+    "date": null
+  },
+  "vix": {
+    "value": 18.739999771118164,
+    "previous": 18.440000534057617,
+    "date": "2026-10-20"
+  },
+  "tqqq": {
+    "value": 70.63999938964844,
+    "previous": 68.20999908447266,
+    "date": "2026-10-19"
+  }
+}
