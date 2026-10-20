@@ -1,11 +1,7 @@
-
-import csv
 import json
-import sys
 import re
-import time
+import sys
 from datetime import datetime, timezone
-from io import StringIO
 from pathlib import Path
 
 import requests
@@ -53,51 +49,6 @@ def latest_pair(rows):
     }
 
 
-def get_fred(series_id):
-    """FREDの日次CSVを取得する。"""
-    url = (
-        "https://fred.stlouisfed.org/graph/fredgraph.csv"
-        f"?id={series_id}"
-    )
-
-    print(f"[FRED] Request: {url}", flush=True)
-
-    response = SESSION.get(url, timeout=(15, 90))
-    response.raise_for_status()
-
-    print(
-        f"[FRED] HTTP {response.status_code}, "
-        f"response bytes={len(response.content)}",
-        flush=True,
-    )
-
-    rows = csv.DictReader(StringIO(response.text))
-    valid = []
-
-    for row in rows:
-        date = row.get("observation_date") or row.get("DATE")
-        value = row.get(series_id)
-
-        if not date or not value or value.strip() in (".", ""):
-            continue
-
-        try:
-            valid.append({
-                "date": date.strip(),
-                "value": float(value),
-            })
-        except (ValueError, TypeError):
-            continue
-
-    if not valid:
-        raise ValueError(
-            f"{series_id}: CSVに有効な値がありません。"
-            f"先頭部分={response.text[:300]!r}"
-        )
-
-    return latest_pair(valid)
-
-
 def get_yahoo(symbol):
     """Yahoo Financeから日足データを取得する。"""
     url = (
@@ -137,6 +88,30 @@ def get_yahoo(symbol):
 
     return latest_pair(rows)
 
+
+def get_effr():
+    """NY連銀の公式APIから実効FF金利(EFFR)の最新1件を取得する。"""
+    url = (
+        "https://markets.newyorkfed.org/api/rates/unsecured/effr/last/1.json"
+    )
+    response = SESSION.get(url, timeout=(15, 45))
+    response.raise_for_status()
+
+    ref_rates = response.json().get("refRates", [])
+    if not ref_rates:
+        raise ValueError("EFFR: APIの結果が空です")
+
+    row = ref_rates[0]
+    if row.get("percentRate") is None:
+        raise ValueError("EFFR: percentRateがありません")
+
+    return {
+        "value": float(row["percentRate"]),
+        "previous": None,
+        "date": row["effectiveDate"],
+    }
+
+
 def get_credit_ratio():
     """日経225.jpの信用評価損益率を、ブラウザ描画後のDOMから取得する。"""
     from playwright.sync_api import sync_playwright
@@ -145,26 +120,20 @@ def get_credit_ratio():
 
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        page = browser.new_page(user_agent=HEADERS["User-Agent"])
-        page.goto(url, wait_until="domcontentloaded", timeout=60000)
+        try:
+            page = browser.new_page(user_agent=HEADERS["User-Agent"])
+            page.goto(url, wait_until="domcontentloaded", timeout=60000)
 
-        # tbody#datatbl に行が入るまで待つ
-        page.wait_for_selector("tbody#datatbl tr td", timeout=30000)
-        html = page.inner_html("tbody#datatbl")
-        browser.close()
+            # tbody#datatbl に行が入るまで待つ
+            page.wait_for_selector("tbody#datatbl tr td", timeout=30000)
+            html = page.inner_html("tbody#datatbl")
+        finally:
+            browser.close()
 
     soup = BeautifulSoup(f"<table>{html}</table>", "html.parser")
-    rows = soup.select("tr")
-    print(f"[信用] tr数={len(rows)}", flush=True)
-
-    # 列構成の確認用(動作確認後は削除してよい)
-    for tr in rows[:3]:
-        print("[信用] cells:",
-              [td.get_text(strip=True) for td in tr.find_all("td")],
-              flush=True)
-
     parsed = []
-    for row in rows:
+
+    for row in soup.select("tr"):
         cells = row.find_all("td")
         if len(cells) < 9:
             continue
@@ -188,9 +157,12 @@ def get_credit_ratio():
             parsed.append({"date": date, "value": value})
 
     if not parsed:
-        raise ValueError("信用評価損益率: 行は取得できたが、有効な値を抽出できません")
+        raise ValueError(
+            "信用評価損益率: 行は取得できたが、有効な値を抽出できません"
+        )
 
     return latest_pair(parsed)
+
 
 def safe_fetch(name, func):
     """個別の取得エラーを記録し、他項目の取得を継続する。"""
@@ -220,12 +192,10 @@ def main():
             "信用評価損益率", get_credit_ratio
         ),
         "dgs10": safe_fetch(
-            "米国10年金利",
-            lambda: get_fred("DGS10"),
+            "米国10年金利", lambda: get_yahoo("%5ETNX")
         ),
         "fedfunds": safe_fetch(
-            "実効FF金利",
-            lambda: get_fred("DFF"),
+            "実効FF金利", get_effr
         ),
         "vix": safe_fetch(
             "VIX", lambda: get_yahoo("%5EVIX")
