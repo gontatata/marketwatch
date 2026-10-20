@@ -6,7 +6,7 @@ on:
 
   # 平日の日本時間6時に自動実行
   schedule:
-    - cron: "0 21 * * 1-5"
+    - cron: "30 13 * * 1-5"
 
 permissions:
   contents: write
