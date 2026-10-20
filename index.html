@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101827">
+<title>Market Watch | 毎日チェック</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1120;--panel:#141e30;--line:#26364f;--text:#edf3ff;--muted:#9eb0ca;--accent:#69a7ff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{padding:26px max(18px,calc((100% - 1180px)/2));background:linear-gradient(120deg,#152946,#101827);border-bottom:1px solid var(--line)}
+h1{font-size:clamp(24px,4vw,34px);margin:0 0 5px}header p{margin:0;color:var(--muted)}main{max-width:1180px;margin:auto;padding:22px 16px 40px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;min-width:0}
+.cardhead{padding:14px 16px 8px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+h2{font-size:17px;margin:0}.tag{font-size:11px;color:#c9dcff;background:#203451;border-radius:20px;padding:3px 8px;white-space:nowrap}
+.card p{margin:0;padding:0 16px 12px;color:var(--muted);font-size:13px}
+.widget{height:310px;width:100%}.fred{width:100%;height:310px;border:0;background:#fff}
+.actions{display:flex;flex-wrap:wrap;gap:10px;padding:0 16px 16px}
+a.btn{display:inline-block;text-decoration:none;background:#223651;border:1px solid #3c5578;color:#eaf2ff;padding:8px 11px;border-radius:8px;font-size:13px}
+a.btn:hover{background:#2e496c}
+.notice{margin-top:18px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;color:var(--muted);font-size:13px}
+footer{max-width:1180px;margin:auto;padding:0 16px 28px;color:var(--muted);font-size:12px}
+@media(max-width:480px){.widget,.fred{height:280px}.cardhead{align-items:flex-start}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Market Watch</h1>
+  <p>毎日の投資環境チェック｜信用評価損益率・米国金利・VIX・TQQQ</p>
+</header>
+<main>
+  <div class="grid">
+    <section class="card">
+      <div class="cardhead"><h2>日本の信用評価損益率</h2><span class="tag">日本株</span></div>
+      <p>日経平均・信用取引の需給を見るための指標。元データの更新状況を確認してください。</p>
+      <div class="actions">
+        <a class="btn" href="https://nikkei225jp.com/data/sinyou.php" target="_blank" rel="noopener">信用評価損益率を開く ↗</a>
+      </div>
+      <p>この指標は外部サイト側の表示を利用します。自動取得値ではありません。</p>
+    </section>
+    <section class="card">
+      <div class="cardhead"><h2>米国10年国債利回り</h2><span class="tag">DGS10</span></div>
+      <p>米長期金利（日次）。FREDのチャートを表示。</p>
+      <iframe class="fred" title="FRED DGS10 chart" loading="lazy" src="https://fred.stlouisfed.org/graph/graph-landing.php?g=1&width=640&height=310&id=DGS10&cosd=2024-01-01&coed=2026-12-31"></iframe>
+      <div class="actions"><a class="btn" href="https://fred.stlouisfed.org/series/DGS10" target="_blank" rel="noopener">FREDで詳細 ↗</a></div>
+    </section>
+    <section class="card">
+      <div class="cardhead"><h2>米国の政策金利</h2><span class="tag">FEDFUNDS</span></div>
+      <p>実効フェデラル・ファンド金利（日次ではなく月次系列）。</p>
+      <iframe class="fred" title="FRED FEDFUNDS chart" loading="lazy" src="https://fred.stlouisfed.org/graph/graph-landing.php?g=1&width=640&height=310&id=FEDFUNDS&cosd=2020-01-01&coed=2026-12-31"></iframe>
+      <div class="actions"><a class="btn" href="https://fred.stlouisfed.org/series/FEDFUNDS" target="_blank" rel="noopener">FREDで詳細 ↗</a><a class="btn" href="https://www.federalreserve.gov/monetarypolicy/openmarket.htm" target="_blank" rel="noopener">FOMC公式 ↗</a></div>
+    </section>
+    <section class="card">
+      <div class="cardhead"><h2>VIX指数</h2><span class="tag">CBOE:VIX</span></div>
+      <p>米株の予想変動率。チャートはTradingView提供。</p>
+      <div class="tradingview-widget-container widget"><div class="tradingview-widget-container__widget"></div></div>
+      <div class="actions"><a class="btn" href="https://www.cboe.com/tradable_products/vix/" target="_blank" rel="noopener">Cboe公式 ↗</a></div>
+    </section>
+    <section class="card">
+      <div class="cardhead"><h2>TQQQ</h2><span class="tag">NASDAQ</span></div>
+      <p>ProShares UltraPro QQQ（ナスダック100の日次3倍を目指すETF）。</p>
+      <div class="tradingview-widget-container widget"><div class="tradingview-widget-container__widget"></div></div>
+      <div class="actions"><a class="btn" href="https://finance.yahoo.com/quote/TQQQ/" target="_blank" rel="noopener">Yahoo Finance ↗</a><a class="btn" href="https://www.proshares.com/our-etfs/leveraged-and-inverse/tqqq" target="_blank" rel="noopener">運用会社 ↗</a></div>
+    </section>
+  </div>
+  <div class="notice"><strong>更新・データについて</strong><br>
+  このページは外部データ提供元のチャートを読み込みます。表示の遅延・休場日・提供元の仕様変更により、値がすぐ反映されない場合があります。政策金利のFRED系列「FEDFUNDS」は実効金利の月次系列で、FOMCが設定する目標レンジそのものではありません。売買判断の前に各提供元の最新値を確認してください。</div>
+</main>
+<footer>個人用ダッシュボード｜GitHub Pagesで無料公開できます。リポジトリをPublicにするとページとソースコードは公開されます。</footer>
+<script>
+(function(){
+  const containers=document.querySelectorAll('.tradingview-widget-container');
+  const symbols=['CBOE:VIX','NASDAQ:TQQQ'];
+  containers.forEach((el,i)=>{
+    const s=document.createElement('script');
+    s.src='https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js';
+    s.async=true;
+    s.innerHTML=JSON.stringify({
+      symbol:symbols[i],width:'100%',height:310,locale:'ja',
+      dateRange:'1M',colorTheme:'dark',isTransparent:true,
+      autosize:true,largeChartUrl:'',chartOnly:false,
+      noTimeScale:false,chartType:'area',valuesTracking:'1',
+      changeMode:'price-and-percent',fontColor:'#9eb0ca'
+    });
+    el.appendChild(s);
+  });
+})();
+</script>
+</body>
+</html>
