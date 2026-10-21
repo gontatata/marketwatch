@@ -1,12 +1,10 @@
 name: Update Market Data
 
 on:
-  # GitHub上のボタンから手動実行
   workflow_dispatch:
 
-  # 平日の日本時間6時に自動実行
   schedule:
-    - cron: "30 13 * * 1-5"
+    - cron: "05 14 * * 1-5"
 
 permissions:
   contents: write
