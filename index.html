@@ -65,7 +65,7 @@
       <div id="status" class="status"></div>
       <div id="cards" class="grid"></div>
       <p style="color: #9caec5; font-size: 12px; margin-top: 24px">
-        データは外部提供元から定期取得します。休場日・配信遅延により最新取引日の値と異なる場合があります。
+        データは外部提供元から定期取得します。休場日・配信遅延により最新取引日の値と異なる場合があります。NASDAQ100予想PERは、提供元の公表が数営業日遅れるため、データ日が他の項目より古くなります。
       </p>
     </main>
     <script>
@@ -99,6 +99,12 @@
           name: "TQQQ",
           unit: " USD",
           source: "https://finance.yahoo.com/quote/TQQQ/",
+        },
+        {
+          key: "nasdaq_per",
+          name: "NASDAQ100 予想PER",
+          unit: " 倍",
+          source: "https://nikkei225jp.com/data/us_per.php",
         },
       ];
 
