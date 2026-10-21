@@ -164,6 +164,64 @@ def get_credit_ratio():
     return latest_pair(parsed)
 
 
+def get_nasdaq_forward_per():
+    """日経225.jpの米国株PERページから、NASDAQ100の予想PERを取得する。
+
+    表(table#datatbl)のデータ行は日付+15セルで、
+    [10]=NASDAQ100株価, [11]=NASDAQ100 PER, [12]=配当利回り。
+    直近の行はPERが空欄のことがあるため、値のある行だけを使う。
+    """
+    from playwright.sync_api import sync_playwright
+
+    url = "https://nikkei225jp.com/data/us_per.php"
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        try:
+            page = browser.new_page(user_agent=HEADERS["User-Agent"])
+            page.goto(url, wait_until="domcontentloaded", timeout=60000)
+            page.wait_for_selector("table#datatbl tr td", timeout=30000)
+
+            # 表の切替ラジオ(R012=予想PER)が選択されていることを保証する
+            if not page.is_checked("#R012"):
+                page.locator("#R012").check(force=True)
+                page.wait_for_timeout(1500)
+            if not page.is_checked("#R012"):
+                raise ValueError("予想PERに切り替えられませんでした")
+
+            html = page.inner_html("table#datatbl")
+        finally:
+            browser.close()
+
+    soup = BeautifulSoup(f"<table>{html}</table>", "html.parser")
+    parsed = []
+
+    for row in soup.select("tr"):
+        cells = row.find_all("td")
+        if len(cells) < 16:
+            continue
+
+        date = cells[0].get_text(strip=True)
+        if not re.match(r"^\d{4}-\d{2}-\d{2}$", date):
+            continue
+
+        raw = cells[11].get_text(strip=True).replace(",", "")
+        if not raw:
+            continue  # PER未公表の行
+
+        try:
+            value = float(raw)
+        except ValueError:
+            continue
+
+        parsed.append({"date": date, "value": value})
+
+    if not parsed:
+        raise ValueError("NASDAQ100予想PER: 有効な値を抽出できません")
+
+    return latest_pair(parsed)
+
+
 def safe_fetch(name, func):
     """個別の取得エラーを記録し、他項目の取得を継続する。"""
     try:
@@ -203,12 +261,17 @@ def main():
         "tqqq": safe_fetch(
             "TQQQ", lambda: get_yahoo("TQQQ")
         ),
+        "nasdaq_per": safe_fetch(
+            "NASDAQ100予想PER", get_nasdaq_forward_per
+        ),
     }
 
     # 取得に失敗した場合は既存のdata.jsonを上書きしない
     failed = [
         name
-        for name in ("credit", "dgs10", "fedfunds", "vix", "tqqq")
+        for name in (
+            "credit", "dgs10", "fedfunds", "vix", "tqqq", "nasdaq_per"
+        )
         if data[name]["value"] is None
     ]
 
